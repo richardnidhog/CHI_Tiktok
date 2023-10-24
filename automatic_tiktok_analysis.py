@@ -1,4 +1,3 @@
-import whisper
 import os
 import openai
 import streamlit as st
@@ -6,12 +5,11 @@ import pandas as pd
 
 st.title("Automatic TikTok Misinformation Analysis")
 video_files = st.file_uploader('Upload Your Video File', type=['wav', 'mp3', 'mp4'], accept_multiple_files=True)
-model = whisper.load_model('base')
 
-openai.api_key = "" #insert API key
+openai.api_key = "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" #insert API key
 
 def transcribe(video_file):
-    result = model.transcribe(video_file.name, fp16=False)
+    result = openai.Audio.transcribe("whisper-1", video_file)
     text = result["text"]
     transcript = '"{}"'.format(text)
     return transcript
