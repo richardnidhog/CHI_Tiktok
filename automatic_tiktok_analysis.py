@@ -16,10 +16,10 @@ def transcribe(video_file):
 
 def analyze(transcript):
     # Define the system message
-    system_msg = 'You are a helpful assistant who can understand when a statement contains misinformation, specifically about vaccines.'
+    system_msg = 'You are a helpful assistant who can understand when a statement contains misinformation.'
 
     # Define the user message
-    user_msg = 'Determine if the following statement contains any misinformation. Answer "May contain misinformation" or "May not contain misinformation". Then succinctly list the reasons, no more than three in number and no more than 50 words each:' + transcript
+    user_msg = 'Determine if the statement above contains any misinformation. In the part one, the results are first displayed in the first line, \'May contain misinformation\', \'Cannot be recognized at this time\' or \'No misinformation detected\'. In the part two, an operation is performed to extract keywords from the input text, providing up to six keywords, sorted in order of criticality. In the part three, briefly summarize the reasons for determining whether it contains misinformation. Three reasons of no more than 50 words each are required. Add line breaks between each section. Regardless of the state of the text given, it must be answered in the format given above:' + transcript
 
     # Create a dataset using GPT
     response = openai.ChatCompletion.create(model="gpt-3.5-turbo",
