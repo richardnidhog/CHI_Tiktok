@@ -7,11 +7,39 @@ import datetime
 
 st.title("Automatic Misinformation Analysis")
 
+if "api_key" not in st.session_state:
+    st.session_state["api_key"] = ""
+if "check_done" not in st.session_state:
+    st.session_state["check_done"] = False
 
+if not st.session_state["check_done"]:
+    # Display input for OpenAI API key
+    st.session_state["api_key"] = st.text_input('Enter the OpenAI API key', type='password')
+
+# OpenAI Completion request for checking API key
+def is_api_key_valid(api_key):
+    openai.api_key = api_key
+    try:
+        response = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                            messages=[{"role": "user", "content": "This is a test."}])
+    except:
+        return False
+    else:
+        return True
+
+if st.session_state["api_key"]:
+    # On receiving the input, perform an API key check
+    if is_api_key_valid(st.session_state["api_key"]):
+        # If API check is successful
+        st.success('OpenAI API key check passed')
+        st.session_state["check_done"] = True
+    else:
+        # If API check fails
+        st.error('OpenAI API key check failed. Please enter a correct API key')
 
 video_files = st.file_uploader('Upload Your Video File', type=['wav', 'mp3', 'mp4'], accept_multiple_files=True)
 
-openai.api_key = "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" 
+#openai.api_key = 
 
 def transcribe(video_file):
     result = openai.Audio.transcribe("whisper-1", video_file)
@@ -62,7 +90,11 @@ if st.button('Transcribe and Analyze Videos'):
             # Split the analysis information
             analysis = analysis.split('\n')
             misinformation_status = analysis[0]
-            keywords = analysis[2]
+            keywords_index = [i for i, element in enumerate(analysis) if 'Keywords:' in element]
+            if keywords_index:
+                keywords = analysis[keywords_index[0]]
+            else:
+                keywords = "Not found"
             #reasons = ' '.join(analysis[4:])
 
             d = {
