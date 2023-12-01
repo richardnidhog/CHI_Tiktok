@@ -7,11 +7,48 @@ import datetime
 
 st.title("Automatic Misinformation Analysis")
 
+if "api_key" not in st.session_state:
+    st.session_state["api_key"] = ""
+if "check_done" not in st.session_state:
+    st.session_state["check_done"] = False
 
+if not st.session_state["check_done"]:
+    # Display input for OpenAI API key
+    st.session_state["api_key"] = st.text_input('Enter the OpenAI API key', type='password')
+
+# OpenAI Completion request for checking API key
+def is_api_key_valid(api_key):
+    openai.api_key = api_key
+    try:
+        response = openai.ChatCompletion.create(model="gpt-3.5-turbo",
+                                            messages=[{"role": "user", "content": "This is a test."}])
+    except:
+        return False
+    else:
+        return True
+
+if st.session_state["api_key"]:
+    # On receiving the input, perform an API key check
+    if is_api_key_valid(st.session_state["api_key"]):
+        # If API check is successful
+        st.success('OpenAI API key check passed')
+        st.session_state["check_done"] = True
+    else:
+        # If API check fails
+        st.error('OpenAI API key check failed. Please enter a correct API key')
+
+def get_model_selection():
+    st.write("Select the AI model to use:")
+    model = st.selectbox("Choose an AI model", ("gpt-3.5-turbo", "gpt-4"))
+    return model
+
+if st.session_state["check_done"]:
+    # Display model selection after API key check passed
+    selected_model = get_model_selection()
 
 video_files = st.file_uploader('Upload Your Video File', type=['wav', 'mp3', 'mp4'], accept_multiple_files=True)
 
-openai.api_key = "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" 
+#openai.api_key = "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" 
 
 def transcribe(video_file):
     result = openai.Audio.transcribe("whisper-1", video_file)
@@ -19,8 +56,7 @@ def transcribe(video_file):
     transcript = '"{}"'.format(text)
     return transcript
 
-def analyze(transcript):
-
+def analyze(transcript,model):
     system_msg1 = "Your task is to determine if the following statement contains any misinformation. Begin by stating \'May contain misinformation\', \'Cannot be recognized\' or \'No misinformation detected\'."
 
     system_msg2 = "Your next task is to extract up to six keywords from the statement, sorted in order of criticality. Follow the format \"Keywords: ...\""
@@ -35,7 +71,7 @@ def analyze(transcript):
     ]   
 
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model=model,
         messages=chat_sequence
     )
 
@@ -55,15 +91,19 @@ if st.button('Transcribe and Analyze Videos'):
         print(video_file.name)
         if video_file is not None:
             st.sidebar.success('Analyzing' + " " + video_file.name)
-            transcript = transcribe(video_file)
-            analysis = analyze(transcript)
+            transcript = transcribe(video_file,selected_model)
+            analysis = analyze(transcript,selected_model)
             st.markdown(video_file.name + ": " + transcript)
             st.markdown(video_file.name + ": " + analysis)
 
             # Split the analysis information
             analysis = analysis.split('\n')
             misinformation_status = analysis[0]
-            keywords = analysis[2]
+            keywords_index = [i for i, element in enumerate(analysis) if 'Keywords:' in element]
+            if keywords_index:
+                keywords = analysis[keywords_index[0]]
+            else:
+                keywords = "Not found"
             #reasons = ' '.join(analysis[4:])
 
             d = {
