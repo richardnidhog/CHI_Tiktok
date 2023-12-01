@@ -37,6 +37,15 @@ if st.session_state["api_key"]:
         # If API check fails
         st.error('OpenAI API key check failed. Please enter a correct API key')
 
+def get_model_selection():
+    st.write("Select the AI model to use:")
+    model = st.selectbox("Choose an AI model", ("gpt-3.5-turbo", "gpt-4"))
+    return model
+
+if st.session_state["check_done"]:
+    # Display model selection after API key check passed
+    selected_model = get_model_selection()
+
 video_files = st.file_uploader('Upload Your Video File', type=['wav', 'mp3', 'mp4'], accept_multiple_files=True)
 
 #openai.api_key = 
@@ -47,7 +56,7 @@ def transcribe(video_file):
     transcript = '"{}"'.format(text)
     return transcript
 
-def analyze(transcript):
+def analyze(transcript, model):
     system_msg1 = "Your task is to determine if the following statement contains any misinformation. Begin by stating \'May contain misinformation\', \'Cannot be recognized\' or \'No misinformation detected\'."
 
     system_msg2 = "Your next task is to extract up to six keywords from the statement, sorted in order of criticality. Follow the format \"Keywords: ...\""
@@ -62,7 +71,7 @@ def analyze(transcript):
     ]   
 
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model=model,
         messages=chat_sequence
     )
 
@@ -83,7 +92,7 @@ if st.button('Transcribe and Analyze Videos'):
         if video_file is not None:
             st.sidebar.success('Analyzing' + " " + video_file.name)
             transcript = transcribe(video_file)
-            analysis = analyze(transcript)
+            analysis = analyze(transcript, selected_model)
             st.markdown(video_file.name + ": " + transcript)
             st.markdown(video_file.name + ": " + analysis)
 
