@@ -38,8 +38,8 @@ if st.session_state["api_key"]:
         st.error('OpenAI API key check failed. Please enter a correct API key')
 
 def get_model_selection():
-    st.write("Select the AI model to use:")
-    model = st.selectbox(("gpt-3.5-turbo", "gpt-3.5-turbo-1106", "gpt-4", "gpt-4-1106-preview"))
+    # Display model selection after API key check passed
+    model = st.selectbox("Select the AI model to use:", ("gpt-3.5-turbo", "gpt-3.5-turbo-1106", "gpt-4", "gpt-4-1106-preview"))
     return model
 
 if st.session_state["check_done"]:
