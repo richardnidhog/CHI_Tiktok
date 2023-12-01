@@ -39,7 +39,7 @@ if st.session_state["api_key"]:
 
 def get_model_selection():
     st.write("Select the AI model to use:")
-    model = st.selectbox("Choose an AI model", ("gpt-3.5-turbo", "gpt-4"))
+    model = st.selectbox(("gpt-3.5-turbo", "gpt-3.5-turbo-1106", "gpt-4", "gpt-4-1106-preview"))
     return model
 
 if st.session_state["check_done"]:
