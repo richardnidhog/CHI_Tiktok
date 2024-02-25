@@ -1,9 +1,9 @@
 import os
 import openai
 import streamlit as st
-import requests
 import pandas as pd
 import datetime
+from openai import OpenAI
 
 st.title("Automatic Misinformation Analysis")
 
@@ -18,10 +18,14 @@ if not st.session_state["check_done"]:
 
 # OpenAI Completion request for checking API key
 def is_api_key_valid(api_key):
-    openai.api_key = api_key
+    client = OpenAI(api_key=api_key)
     try:
-        response = openai.ChatCompletion.create(model="gpt-3.5-turbo",
-                                            messages=[{"role": "user", "content": "This is a test."}])
+        response = client.chat.completions.create(
+  model="gpt-3.5-turbo",
+  messages=[
+    {"role": "user", "content": "Hello World!"},
+  ]
+)
     except:
         return False
     else:
@@ -33,6 +37,7 @@ if st.session_state["api_key"]:
         # If API check is successful
         st.success('OpenAI API key check passed')
         st.session_state["check_done"] = True
+        client = OpenAI(api_key=st.session_state["api_key"])
     else:
         # If API check fails
         st.error('OpenAI API key check failed. Please enter a correct API key')
@@ -51,32 +56,34 @@ video_files = st.file_uploader('Upload Your Video File', type=['wav', 'mp3', 'mp
 #openai.api_key = 
 
 def transcribe(video_file):
-    result = openai.Audio.transcribe("whisper-1", video_file)
-    text = result["text"]
-    transcript = '"{}"'.format(text)
+    transcript = client.audio.transcriptions.create(
+        model="whisper-1", 
+        file=video_file, 
+        response_format="text"
+    )
     return transcript
 
 def analyze(transcript, model):
-    system_msg1 = "Your task is to determine if the following statement contains any misinformation. Begin by stating \'May contain misinformation\', \'Cannot be recognized\' or \'No misinformation detected\'."
+    system_msg1 = "Your task is to extract up to six keywords from the text provided to you, sorted in order of criticality. Follow the format \"Keywords: ...\""
 
-    system_msg2 = "Your next task is to extract up to six keywords from the statement, sorted in order of criticality. Follow the format \"Keywords: ...\""
+    system_msg2 = "Your next task is to determine if the text contains any misinformation. You only could say \'May contain misinformation\', \'Cannot be recognized\' or \'No misinformation detected\'."
 
     system_msg3 = "Lastly, you must briefly summarize the reasons for determining whether the statement contains misinformation. Provide three or less reasons of no more than 50 words each."
 
     chat_sequence = [
-        {"role": "system", "content": "You are a helpful assistant. You need to complete the requirements based on the following paragraph." + transcript},
+        {"role": "system", "content": "You are an experienced scientist and medical doctor. You need to fully read and understand the text paragraph given below. Then complete the requirements based on the contents therein." + transcript},
         {"role": "user", "content": system_msg1},
         {"role": "user", "content": system_msg2},
         {"role": "user", "content": system_msg3}
     ]   
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model=model,
+        #response_format={ "type": "json_object" },
         messages=chat_sequence
     )
 
-    content = response['choices'][0]['message']['content']
-    gpt_response = '{}'.format(content)
+    gpt_response = response.choices[0].message.content
     return gpt_response
 
 @st.cache_data
