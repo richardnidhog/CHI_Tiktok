@@ -1,5 +1,4 @@
 import os
-import openai
 import streamlit as st
 import pandas as pd
 import datetime
@@ -64,17 +63,13 @@ def transcribe(video_file):
     return transcript
 
 def analyze(transcript, model):
-    system_msg1 = "Your task is to extract up to six keywords from the text provided to you, sorted in order of criticality. Follow the format \"Keywords: ...\""
-
-    system_msg2 = "Your next task is to determine if the text contains any misinformation. You only could say \'May contain misinformation\', \'Cannot be recognized\' or \'No misinformation detected\'."
-
-    system_msg3 = "Lastly, you must briefly summarize the reasons for determining whether the statement contains misinformation. Provide three or less reasons of no more than 50 words each."
-
+    system_msg1 = r"Your task is to extract up to three to six keywords from the text provided to you, sorted in order of criticality. Please follow the format strictly: Output a Python list, store all keywords in it, then add [k] and [/k] to the head and tail of the complete list."
+    system_msg2 = r"Your next task is to determine if the text contains any misinformation. You may only answer one of the following three answers: '[r]May contain misinformation[/r]', '[r]Cannot be recognized[/r]', '[r]No misinformation detected[/r]'."
+    system_msg3 = r"Lastly, you must briefly summarize the reasons for determining whether the statement contains misinformation. Provide three or less reasons of no more than 50 words each. Please follow the format strictly: Output a string, store all summary in it, then add [s] and [/s] to the head and tail of the complete text."
+    system_msg = system_msg1 + system_msg2 + system_msg3
     chat_sequence = [
-        {"role": "system", "content": "You are an experienced scientist and medical doctor. You need to fully read and understand the text paragraph given below. Then complete the requirements based on the contents therein." + transcript},
-        {"role": "user", "content": system_msg1},
-        {"role": "user", "content": system_msg2},
-        {"role": "user", "content": system_msg3}
+        {"role": "system", "content": "You are an experienced scientist and medical doctor. You need to fully read and understand the transcript paragraph given below. Then complete the requirements based on the contents therein. Transcript:" + transcript},
+        {"role": "user", "content": system_msg},
     ]   
 
     response = client.chat.completions.create(
@@ -100,7 +95,7 @@ if st.button('Transcribe and Analyze Videos'):
             st.sidebar.success('Analyzing' + " " + video_file.name)
             transcript = transcribe(video_file)
             analysis = analyze(transcript, selected_model)
-            st.markdown(video_file.name + ": " + transcript)
+            #st.markdown(video_file.name + ": " + transcript)
             st.markdown(video_file.name + ": " + analysis)
 
             # Split the analysis information
